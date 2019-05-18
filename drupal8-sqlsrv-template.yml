@@ -1,0 +1,159 @@
+metadata:
+    type: drupal8
+    infrastructure: ^5.1
+services:
+    nginx:
+        enabled: true
+        required: true
+        image: 'wodby/nginx:1.15-5.3.3'
+        environment:
+            NGINX_VHOST_PRESET: drupal8
+            NGINX_SET_REAL_IP_FROM: 172.17.0.0/16
+            NGINX_BACKEND_HOST: php
+        ports:
+            - 'edge::80/tcp'
+        volumes:
+            - 'app:/var/www/html'
+            - 'files:/mnt/files'
+        memory: '4'
+        security_context:
+            run_as_user: 0
+        check_ready:
+            exec:
+                command: [make, check-ready, '-f', /usr/local/bin/actions.mk]
+            initial_delay_seconds: 5
+            failure_threshold: 2
+            timeout_seconds: 3
+            period_seconds: 30
+    php:
+        enabled: true
+        required: true
+        image: 'robertoperuzzo/php-sqlserver:7.3'
+        ports:
+            - 9000/tcp
+        volumes:
+            - 'app:/var/www/html'
+            - 'files:/mnt/files'
+        memory: '32'
+        security_context:
+            capabilities:
+                add: [SYS_PTRACE]
+        check_ready:
+            exec:
+                command: [make, check-ready, '-f', /usr/local/bin/actions.mk]
+            initial_delay_seconds: 5
+            failure_threshold: 2
+            timeout_seconds: 3
+            period_seconds: 30
+    mariadb:
+        enabled: true
+        required: false
+        image: 'wodby/mariadb:10.2-3.4.0'
+        environment:
+            MYSQL_ROOT_PASSWORD: '{{db_root_password}}'
+            MYSQL_DATABASE: '{{db_database}}'
+            MYSQL_USER: '{{db_user}}'
+            MYSQL_PASSWORD: '{{db_password}}'
+        ports:
+            - 3306/tcp
+        volumes:
+            - 'mariadb:/var/lib/mysql'
+        memory: '64'
+        deployment:
+            strategy: recreate
+    opensmtpd:
+        enabled: true
+        required: false
+        image: 'wodby/opensmtpd:6.0-1.4.0'
+        ports:
+            - 25/tcp
+        volumes:
+            - 'smtpd:/var/spool/smtpd'
+        memory: '4'
+        check_ready:
+            exec:
+                command: [make, check-ready, '-f', /usr/local/bin/actions.mk]
+            initial_delay_seconds: 5
+            failure_threshold: 2
+            timeout_seconds: 3
+            period_seconds: 30
+    mailhog:
+        enabled: false
+        required: false
+        image: mailhog/mailhog
+        ports:
+            - '25:1025/tcp'
+            - 'edge::80:8025/tcp'
+        memory: '4'
+    pma:
+        enabled: false
+        required: false
+        image: 'robertoperuzzo/php-sqlserver:7.3'
+        environment:
+            PMA_HOST: '{{db_host}}'
+            PHP_UPLOAD_MAX_FILESIZE: 1G
+            PHP_MAX_INPUT_VARS: 1G
+        ports:
+            - 'edge::80/tcp'
+        memory: '32'
+    crond:
+        enabled: true
+        required: false
+        image: 'robertoperuzzo/php-sqlserver:7.3'
+        command:
+            - sudo
+            - '-E'
+            - /etc/init.d/cron
+            - '-f'
+            - '-d'
+            - '8'
+            - start
+        volumes:
+            - 'app:/var/www/html'
+            - 'files:/mnt/files'
+        memory: '32'
+        security_context:
+            capabilities:
+                add: [SYS_PTRACE]
+    sshd:
+        enabled: true
+        required: false
+        image: 'robertoperuzzo/php-sqlserver:7.3'
+        command:
+            - sudo
+            - /usr/sbin/sshd
+            - '-De'
+        environment:
+            SSHD_GATEWAY_PORTS: clientspecified
+        ports:
+            - 'auto::22'
+            - '9000:9000'
+        volumes:
+            - 'app:/var/www/html'
+            - 'files:/mnt/files'
+        memory: '8'
+        security_context:
+            capabilities:
+                add: [SYS_PTRACE]
+volumes:
+    app:
+        path: app
+    files:
+        path: files
+    mariadb:
+        path: mariadb
+    host-sys:
+        path: /sys
+    redis:
+        path: redis
+    smtpd:
+        path: smtpd
+variables:
+    drupal_hash_salt: 'auto:password:128'
+    drupal_files_sync_salt: 'auto:password:74'
+    db_root_password: 'auto:password:32'
+    db_password: 'auto:password:16'
+    db_host: mariadb
+    db_database: drupal
+    db_user: drupal
+    db_driver: mysql
