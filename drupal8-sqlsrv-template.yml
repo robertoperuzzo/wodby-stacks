@@ -28,7 +28,7 @@ services:
     php:
         enabled: true
         required: true
-        image: 'robertoperuzzo/php-sqlserver:7.3'
+        image: 'robertoperuzzo/drupal-php-sqlsrv:7.3'
         ports:
             - 9000/tcp
         volumes:
@@ -88,7 +88,7 @@ services:
     pma:
         enabled: false
         required: false
-        image: 'robertoperuzzo/php-sqlserver:7.3'
+        image: 'robertoperuzzo/drupal-php-sqlsrv:7.3'
         environment:
             PMA_HOST: '{{db_host}}'
             PHP_UPLOAD_MAX_FILESIZE: 1G
@@ -99,7 +99,7 @@ services:
     crond:
         enabled: true
         required: false
-        image: 'robertoperuzzo/php-sqlserver:7.3'
+        image: 'robertoperuzzo/drupal-php-sqlsrv:7.3'
         command:
             - sudo
             - '-E'
@@ -118,7 +118,7 @@ services:
     sshd:
         enabled: true
         required: false
-        image: 'robertoperuzzo/php-sqlserver:7.3'
+        image: 'robertoperuzzo/drupal-php-sqlsrv:7.3'
         command:
             - sudo
             - /usr/sbin/sshd
