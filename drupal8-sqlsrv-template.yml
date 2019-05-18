@@ -103,9 +103,9 @@ services:
         command:
             - sudo
             - '-E'
-            - /etc/init.d/cron
+            - /usr/sbin/cron
             - '-f'
-            - '-d'
+            - '-L'
             - '8'
             - start
         volumes:
