@@ -119,15 +119,16 @@ services:
         enabled: true
         required: false
         image: 'robertoperuzzo/drupal-php-sqlsrv:7.3'
-        command:
-            - sudo
-            - /usr/sbin/sshd
-            - '-De'
         environment:
             SSHD_GATEWAY_PORTS: clientspecified
         ports:
             - 'auto::22'
             - '9000:9000'
+        command:
+            - sudo
+            - '-E'
+            - /usr/sbin/sshd
+            - '-De'
         volumes:
             - 'app:/var/www/html'
             - 'files:/mnt/files'
